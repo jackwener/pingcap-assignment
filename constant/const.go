@@ -2,5 +2,5 @@ package constant
 
 const (
 	MaxKey = "!!!MAXKEY!!!"
-	MinKey = "!!!MINKEY!!!"
+	//MinKey = "!!!MINKEY!!!"
 )

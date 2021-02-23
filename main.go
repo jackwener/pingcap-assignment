@@ -3,6 +3,6 @@ package main
 import "kv/preprocess"
 
 func main() {
-	preprocess.Sort()
-
+	count := preprocess.Sort() + 1
+	preprocess.SortAll(count)
 }
