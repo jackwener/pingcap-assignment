@@ -41,6 +41,34 @@ func Int32ToBytes(n int32, bytes_ []byte) []byte {
 	return bytesBuffer.Bytes()
 }
 
+func StrToBytes(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	b := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&b))
+}
+
+func BytesToStr(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+func Uint16ToBytes(num uint16) []byte {
+	data := make([]byte, 2)
+	binary.BigEndian.PutUint16(data, num)
+	return data
+}
+
+func Uint32ToBytes(num uint32) []byte {
+	data := make([]byte, 4)
+	binary.BigEndian.PutUint32(data, num)
+	return data
+}
+
+func Uint64ToBytes(num uint64) []byte {
+	data := make([]byte, 8)
+	binary.BigEndian.PutUint64(data, num)
+	return data
+}
+
 /*
 func Int32ToBytes(n int32, bytes_ []byte) []byte {
 
@@ -57,17 +85,7 @@ func BytesToInt32(b []byte) int32 {
 }
 */
 
-func StrToBytes(s string) []byte {
-	x := (*[2]uintptr)(unsafe.Pointer(&s))
-	b := [3]uintptr{x[0], x[1], x[1]}
-	return *(*[]byte)(unsafe.Pointer(&b))
-}
-
-func BytesToStr(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
-
-// TODO：需要好好注意异常处理
+// TODO：需要重改一下整个项目的异常处理
 func Check(e error) {
 	if e != nil {
 		panic(e)

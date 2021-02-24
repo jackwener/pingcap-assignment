@@ -129,7 +129,7 @@ func WriteStr(w *bufio.Writer, str string) error {
 	return nil
 }
 
-func (lt *LoserTree) outputPage(kv KVEntry) {
+func (lt *LoserTree) outputBlock(kv KVEntry) {
 	var err error
 	lenBytes := make([]byte, 0, 4)
 

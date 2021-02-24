@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"kv/constant"
 	"kv/util"
 	"os"
 	"strconv"
@@ -45,7 +44,7 @@ func CreateLoserTree(k int) LoserTree {
 
 	lt.outCount = 0
 	lt.outId = 0
-	lt.outFile, err = os.Create("page" + "-" + strconv.Itoa(lt.outId) + ".txt")
+	lt.outFile, err = os.Create("block" + "-" + strconv.Itoa(lt.outId) + ".txt")
 	if err != nil {
 
 	}
@@ -78,7 +77,7 @@ func (lt *LoserTree) CloseLoserTree() {
 	lt.outFile.Close()
 }
 
-//沿从叶子结点leaves[s]到根结点node[0]的路径调整败者树
+// 沿从叶子结点leaves[s]到根结点node[0]的路径调整败者树
 func (lt *LoserTree) Adjust(s int) {
 	t := (s + lt.k) / 2
 	for {
@@ -105,11 +104,11 @@ func (lt *LoserTree) KMerge() {
 
 	//最终的胜者存储在 is[0]中，当其值为 MaxKey时，证明5个临时文件归并结束
 	for {
-		if lt.leaves[lt.node[0]].Key == constant.MaxKey {
+		if lt.leaves[lt.node[0]].Key == MaxKey {
 			break
 		}
 		//向外存写的操作
-		lt.outputPage(lt.leaves[lt.node[0]])
+		lt.outputBlock(lt.leaves[lt.node[0]])
 		fmt.Println(lt.leaves[lt.node[0]].Key)
 		//继续读入后续的记录
 		lt.input(lt.node[0])
@@ -125,7 +124,7 @@ func (lt *LoserTree) input(id int) {
 	key, err := ReadStr(lt.readers[id], lenBytes, dataBytes)
 	if err != nil {
 		if err == io.EOF {
-			lt.leaves[id].Key = constant.MaxKey
+			lt.leaves[id].Key = MaxKey
 			return
 		}
 	}
@@ -143,10 +142,10 @@ func (lt *LoserTree) input(id int) {
 func (lt *LoserTree) beat(index1 int, index2 int) bool {
 	t1 := lt.leaves[index1].Key
 	t2 := lt.leaves[index2].Key
-	if t1 == constant.MaxKey {
+	if t1 == MaxKey {
 		return false
 	}
-	if t2 == constant.MaxKey {
+	if t2 == MaxKey {
 		return true
 	}
 
@@ -157,7 +156,7 @@ func (lt *LoserTree) changeOutput() {
 	lt.outId++
 	lt.outCount = 0
 
-	file, err := os.Create("page" + "-" + strconv.Itoa(lt.outId) + ".txt")
+	file, err := os.Create("block" + "-" + strconv.Itoa(lt.outId) + ".txt")
 	if err != nil {
 
 	}
