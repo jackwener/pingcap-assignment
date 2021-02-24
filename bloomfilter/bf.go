@@ -76,7 +76,6 @@ func (f *Filter) TestString(s string) bool {
 	return f.Test(data)
 }
 
-
 func (f *Filter) location(h uint64) (uint64, uint64) {
 	slot := (h / BitPerByte) & (f.m - 1)
 	mod := h & Mod7

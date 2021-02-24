@@ -2,7 +2,6 @@ package preprocess
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"kv/util"
 	"os"
@@ -10,7 +9,7 @@ import (
 )
 
 type LoserTree struct {
-	node   []int     // 败者树的中间节点，保存比较结果，由于是完全二叉树，所以可以使用一维数组来表示
+	node   []int     // 树状数组
 	leaves []KVEntry // 叶子节点，保存数据
 	k      int
 
@@ -94,27 +93,42 @@ func (lt *LoserTree) Adjust(s int) {
 }
 
 //败者树的建立及内部归并
-func (lt *LoserTree) KMerge() {
-	//模拟从外存中的5个初始归并段中向内存调取数据
+func (lt *LoserTree) KMerge() []string {
 	for i := 0; i < lt.k; i++ {
 		lt.input(i)
 	}
 
 	lt.InitLoserTree()
 
-	//最终的胜者存储在 is[0]中，当其值为 MaxKey时，证明5个临时文件归并结束
+	// TODO：size
+	blockFirstKey := make([]string, 0, 1024)
+	count := 0
+	// 读取第一个
+	blockFirstKey = append(blockFirstKey, lt.leaves[lt.node[0]].Key)
+
+	//最终的胜者存储在 is[0]中，当其值为 MaxKey时，证明临时文件归并结束
 	for {
 		if lt.leaves[lt.node[0]].Key == MaxKey {
+			err := lt.writer.Flush()
+			util.Check(err)
 			break
 		}
 		//向外存写的操作
 		lt.outputBlock(lt.leaves[lt.node[0]])
-		fmt.Println(lt.leaves[lt.node[0]].Key)
+
+		count++
+		if count > BlockSize {
+			count = 1
+			blockFirstKey = append(blockFirstKey, lt.leaves[lt.node[0]].Key)
+		}
+
 		//继续读入后续的记录
 		lt.input(lt.node[0])
 		//根据新读入的记录的关键字的值，重新调整败者树，找出最终的胜者
 		lt.Adjust(lt.node[0])
 	}
+
+	return blockFirstKey
 }
 
 func (lt *LoserTree) input(id int) {
@@ -153,6 +167,8 @@ func (lt *LoserTree) beat(index1 int, index2 int) bool {
 }
 
 func (lt *LoserTree) changeOutput() {
+	lt.writer.Flush()
+
 	lt.outId++
 	lt.outCount = 0
 
@@ -163,4 +179,28 @@ func (lt *LoserTree) changeOutput() {
 	// 注意close前一个File，否则内存泄漏
 	lt.outFile.Close()
 	lt.writer = bufio.NewWriter(file)
+}
+
+func (lt *LoserTree) outputBlock(kv KVEntry) {
+	var err error
+	lenBytes := make([]byte, 0, 4)
+
+	if lt.outCount >= BlockSize {
+		lt.changeOutput()
+	}
+
+	err = WriteLength(lt.writer, lenBytes, int32(len(kv.Key)))
+	util.Check(err)
+
+	err = WriteString(lt.writer, kv.Key)
+	util.Check(err)
+
+	err = WriteLength(lt.writer, lenBytes, int32(len(kv.Value)))
+	util.Check(err)
+
+	err = WriteString(lt.writer, kv.Value)
+	util.Check(err)
+
+	lt.outCount++
+
 }

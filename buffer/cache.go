@@ -1,6 +1,8 @@
 package buffer
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -19,18 +21,29 @@ import (
 //}
 
 type MemCache struct {
-	//mutex       sync.RWMutex
-	//maxItemSize int
-	//cacheList   *list.List
-	//cache       map[PageId]*list.Element
-	blockFirstKey []string
-	bufferPoolManager BufferPoolManager
+	blockFirstKey     []string
+	bufferPoolManager *BufferPoolManager
+}
+
+func CreateMemCache(blockFirstKey []string) *MemCache {
+	return &MemCache{
+		blockFirstKey:     blockFirstKey,
+		bufferPoolManager: CreateBufferPoolManager(),
+	}
 }
 
 func (c *MemCache) Get(key string) (string, error) {
 	blockId := c.GetBlockId(key)
+
+	if key == "20" {
+		fmt.Println(249)
+	}
+
+	if blockId == -1 {
+		return "", errors.New("not found block")
+	}
 	page := c.bufferPoolManager.fetchPage(blockId)
-	return page.Store.get(key)
+	return page.store.get(key)
 }
 
 func (c *MemCache) GetBlockId(key string) BlockId {
@@ -52,6 +65,5 @@ func (c *MemCache) GetBlockId(key string) BlockId {
 		}
 	}
 
-	return -1
+	return BlockId(left - 1)
 }
-

@@ -9,59 +9,60 @@ type LRUReplacer struct {
 	dict map[PageId]*ListNode
 }
 
-func NewReplacer() *LRUReplacer {
-	return &LRUReplacer{
+func CreateReplacer() *LRUReplacer {
+	replacer := &LRUReplacer{
 		// maxItemSize: maxItemSize,
-		listHead: &ListNode{
-			page: Page{
-				PageId: -1,
-			}},
-		listTail: &ListNode{
-			page: Page{
-				PageId: -1,
-			}},
-		dict: make(map[PageId]*ListNode),
+		listHead: &ListNode{pageId: -1},
+		listTail: &ListNode{pageId: -1},
+		dict:     make(map[PageId]*ListNode),
 	}
+
+	replacer.listTail.prev = replacer.listHead
+	replacer.listHead.next = replacer.listTail
+
+	return replacer
 }
 
-func (replacer *LRUReplacer) Insert(page *Page) bool {
+// 插Head
+func (replacer *LRUReplacer) insert(pageId PageId) bool {
 	// TODO: 已经存在
+	node := &ListNode{pageId: pageId}
 
-	node := &ListNode{
-		page: *page,
-	}
-	replacer.listHead.next.prev = node
-	replacer.listTail.next = node
+	node.insert(replacer.listHead, replacer.listHead.next)
 
-	replacer.dict[page.PageId] = node
+	replacer.dict[pageId] = node
 
 	return true
 }
 
-func (replacer *LRUReplacer) Victim() *Page {
-	if replacer.listHead == replacer.listTail {
-		return nil
+// 取tail
+func (replacer *LRUReplacer) victim() PageId {
+	if replacer.listHead.next == replacer.listTail {
+		return -1
 	}
 
 	node := replacer.listTail.prev
-	node.prev.next = replacer.listTail
-	replacer.listTail.prev = node.prev
 
-	node.next = nil
-	node.prev = nil
+	node.remove()
 
-	delete(replacer.dict, node.page.PageId)
+	delete(replacer.dict, node.pageId)
 
-	return &node.page
+	return node.pageId
 }
 
-func (replacer *LRUReplacer) Erase(pageId PageId) bool {
+func (replacer *LRUReplacer) erase(pageId PageId) bool {
 	if node, ok := replacer.dict[pageId]; ok {
-		node.prev.next = node.next
-		node.next.prev = node.prev
+		node.remove()
+		return true
+	}
 
-		node.next = nil
-		node.prev = nil
+	return false
+}
+
+func (replacer *LRUReplacer) use(pageId PageId) bool {
+	if node, ok := replacer.dict[pageId]; ok {
+		node.remove()
+		node.insert(replacer.listHead, replacer.listHead.next)
 		return true
 	}
 

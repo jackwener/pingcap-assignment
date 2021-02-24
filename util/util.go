@@ -6,6 +6,22 @@ import (
 	"unsafe"
 )
 
+/*
+func Int32ToBytes(n int32, bytes_ []byte) []byte {
+
+	bytesBuffer := bytes.NewBuffer([]byte{})
+	binary.Write(bytesBuffer, binary.BigEndian, n)
+	return bytesBuffer.Bytes()
+}
+
+func BytesToInt32(b []byte) int32 {
+	bytesBuffer := bytes.NewBuffer(b)
+
+	var n int32
+	binary.Read(bytesBuffer, binary.BigEndian, &n)
+}
+*/
+
 func BytesToUint32(b []byte) uint32 {
 	var b0, b1, b2, b3 uint32
 	var m0, m1, m2, m3 uint32
@@ -68,22 +84,6 @@ func Uint64ToBytes(num uint64) []byte {
 	binary.BigEndian.PutUint64(data, num)
 	return data
 }
-
-/*
-func Int32ToBytes(n int32, bytes_ []byte) []byte {
-
-	bytesBuffer := bytes.NewBuffer([]byte{})
-	binary.Write(bytesBuffer, binary.BigEndian, n)
-	return bytesBuffer.Bytes()
-}
-
-func BytesToInt32(b []byte) int32 {
-	bytesBuffer := bytes.NewBuffer(b)
-
-	var n int32
-	binary.Read(bytesBuffer, binary.BigEndian, &n)
-}
-*/
 
 // TODO：需要重改一下整个项目的异常处理
 func Check(e error) {

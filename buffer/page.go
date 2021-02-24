@@ -3,23 +3,41 @@ package buffer
 import (
 	"bufio"
 	"errors"
+	"io"
 	"kv/preprocess"
+	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Page struct {
-	PageId   PageId
-	PageType int
-	Pin      int
-	Store    SortedKVEntries
+	pageId  PageId
+	blockId BlockId
+	pin     int
+	store   SortedKVEntries
 	// RwLock   sync.RWMutex
+	// PageType int
 }
 
 type SortedKVEntries struct {
 	keys   []string
 	values []string
 	length int
+}
+
+func (page *Page) initPage(id PageId) {
+	page.pageId = id
+	page.blockId = -1
+
+	page.store.keys = make([]string, PageSlotNum)
+	page.store.values = make([]string, PageSlotNum)
+	page.store.length = 0
+}
+
+// TODO:有必要吗
+func (page *Page) clear() {
+
 }
 
 func (kvs *SortedKVEntries) get(key string) (string, error) {
@@ -35,7 +53,7 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 	right := kvs.length - 1
 	var mid int
 	for {
-		if left > right {
+		if left >= right {
 			break
 		}
 
@@ -43,38 +61,42 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 		if strings.Compare(key, kvs.keys[mid]) > 0 {
 			left = mid + 1
 		} else if strings.Compare(key, kvs.keys[mid]) < 0 {
-			right = mid - 1
+			right = mid
 		} else {
 			return mid, nil
 		}
 	}
 
-	return -1, errors.New("")
+	// TODO
+	return -1, errors.New("binarySearch find key error")
 }
 
-// func initPage(page)
+func (page *Page) loadPage(id BlockId) {
+	page.blockId = id
 
-func (page *Page) loadPage(id PageId) {
-	file, err := os.Open("page"+"-" + string(id) +".txt")
+	file, err := os.Open("block" + "-" + strconv.Itoa(int(id)) + ".txt")
 	if err != nil {
-		
+		log.Println("open block error")
 	}
 	defer file.Close()
-	
+
 	r := bufio.NewReader(file)
 	dataBytes := make([]byte, 2^8)
 	lenBytes := make([]byte, 4)
-	
-	for i := 0; i < 1000; i++ {
-		key, err := preprocess.ReadStr(r,lenBytes,dataBytes)
+
+	for i := 0; i < preprocess.BlockSize; i++ {
+		key, err := preprocess.ReadStr(r, lenBytes, dataBytes)
 		if err != nil {
-			
+			if err == io.EOF {
+
+			}
 		}
-		value, err := preprocess.ReadStr(r,lenBytes,dataBytes)
+		value, err := preprocess.ReadStr(r, lenBytes, dataBytes)
 		if err != nil {
-			
+
 		}
-		page.Store.keys[i] = key
-		page.Store.values[i] = value
+		page.store.keys[i] = key
+		page.store.values[i] = value
+		page.store.length = i + 1
 	}
 }

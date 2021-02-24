@@ -20,20 +20,33 @@ func OutputInternFile(kvs KVEntries, id int) {
 	lenBytes := make([]byte, 0, 4)
 
 	for _, kv := range kvs {
-		err := WriteLen(w, lenBytes, int32(len(kv.Key)))
+		err := WriteLength(w, lenBytes, int32(len(kv.Key)))
 		util.Check(err)
 
-		err = WriteStr(w, kv.Key)
+		err = WriteString(w, kv.Key)
 		util.Check(err)
 
-		err = WriteLen(w, lenBytes, int32(len(kv.Value)))
+		err = WriteLength(w, lenBytes, int32(len(kv.Value)))
 		util.Check(err)
 
-		err = WriteStr(w, kv.Value)
+		err = WriteString(w, kv.Value)
 		util.Check(err)
 	}
 
 	w.Flush()
+}
+
+func ReadStr(r *bufio.Reader, lenBytes []byte, dataBytes []byte) (string, error) {
+	length, err := ReadInt32(r, lenBytes)
+	if err != nil {
+		return "", err
+	}
+
+	key, err := ReadString(r, dataBytes[:length], length)
+	if err != nil {
+		return "", err
+	}
+	return key, nil
 }
 
 func ReadInt32(r *bufio.Reader, bytes_ []byte) (int32, error) {
@@ -84,7 +97,12 @@ func ReadString(r *bufio.Reader, buf []byte, length int32) (string, error) {
 	return string(buf), nil
 }
 
-func WriteLen(w *bufio.Writer, bytes_ []byte, length int32) error {
+// TODO
+func WriteStr(w *bufio.Writer, bytes_ []byte) {
+
+}
+
+func WriteLength(w *bufio.Writer, bytes_ []byte, length int32) error {
 
 	n, err := w.Write(util.Int32ToBytes(length, bytes_))
 	util.Check(err)
@@ -106,7 +124,7 @@ func WriteLen(w *bufio.Writer, bytes_ []byte, length int32) error {
 	return nil
 }
 
-func WriteStr(w *bufio.Writer, str string) error {
+func WriteString(w *bufio.Writer, str string) error {
 	bytes_ := util.StrToBytes(str)
 	n, err := w.Write(util.StrToBytes(str))
 	util.Check(err)
@@ -127,27 +145,4 @@ func WriteStr(w *bufio.Writer, str string) error {
 	}
 
 	return nil
-}
-
-func (lt *LoserTree) outputBlock(kv KVEntry) {
-	var err error
-	lenBytes := make([]byte, 0, 4)
-
-	if lt.outCount >= 1000 {
-		lt.changeOutput()
-	}
-
-	err = WriteLen(lt.writer, lenBytes, int32(len(kv.Key)))
-	util.Check(err)
-
-	err = WriteStr(lt.writer, kv.Key)
-	util.Check(err)
-
-	err = WriteLen(lt.writer, lenBytes, int32(len(kv.Value)))
-	util.Check(err)
-
-	err = WriteStr(lt.writer, kv.Value)
-	util.Check(err)
-
-	lt.outCount++
 }

@@ -19,10 +19,12 @@ func (e KVEntries) Len() int           { return len(e) }
 func (e KVEntries) Less(i, j int) bool { return e[i].Key < e[j].Key }
 func (e KVEntries) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
 
-func SortAll(internCount int) {
-	lt := CreateLoserTree(internCount)
-	lt.KMerge()
+func SortAll() []string {
+	lt := CreateLoserTree(Sort())
+	blockFirstKey := lt.KMerge()
 	lt.CloseLoserTree()
+
+	return blockFirstKey
 }
 
 func Sort() int {
@@ -50,7 +52,9 @@ func Sort() int {
 				if err == io.EOF {
 					sort.Sort(kvs)
 					OutputInternFile(kvs, internId)
-					return internId
+
+					// 返回的是count，所以+1
+					return internId + 1
 				}
 				util.Check(err)
 			}
@@ -59,6 +63,10 @@ func Sort() int {
 			kvs[i].Key = key
 
 			// read value
+
+			// TODO
+			//value, err := ReadStr(r, lenBytes, dataBytes)
+
 			length, err = ReadInt32(r, lenBytes)
 			util.Check(err)
 
@@ -71,18 +79,6 @@ func Sort() int {
 		internId++
 	}
 
-	return internId
-}
-
-func ReadStr(r *bufio.Reader, lenBytes []byte, dataBytes []byte) (string, error) {
-	length, err := ReadInt32(r, lenBytes)
-	if err != nil {
-		return "", err
-	}
-
-	key, err := ReadString(r, dataBytes[:length], length)
-	if err != nil {
-		return "", err
-	}
-	return key, nil
+	// 返回的是count，所以+1
+	return internId + 1
 }
