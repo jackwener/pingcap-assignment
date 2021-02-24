@@ -97,9 +97,12 @@ func ReadString(r *bufio.Reader, buf []byte, length int32) (string, error) {
 	return string(buf), nil
 }
 
-// TODO
-func WriteStr(w *bufio.Writer, bytes_ []byte) {
+func WriteStr(w *bufio.Writer, bytes_ []byte, str string) {
+	err := WriteLength(w, bytes_, int32(len(str)))
+	util.Check(err)
 
+	err = WriteString(w, str)
+	util.Check(err)
 }
 
 func WriteLength(w *bufio.Writer, bytes_ []byte, length int32) error {

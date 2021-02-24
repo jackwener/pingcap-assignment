@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
 
 //type CacheStatus struct {
@@ -33,17 +34,25 @@ func CreateMemCache(blockFirstKey []string) *MemCache {
 }
 
 func (c *MemCache) Get(key string) (string, error) {
-	blockId := c.GetBlockId(key)
-
-	if key == "20" {
-		fmt.Println(249)
+	if key == "1163" {
+		fmt.Println("debug")
 	}
 
+	blockId := c.GetBlockId(key)
 	if blockId == -1 {
 		return "", errors.New("not found block")
 	}
 	page := c.bufferPoolManager.fetchPage(blockId)
-	return page.store.get(key)
+	if page == nil {
+		fmt.Println("get failed")
+		return "", errors.New("get failed")
+	}
+	value, err := page.store.get(key)
+	atomic.AddInt32(&page.pin, -1)
+	if page.pin == 0 {
+		c.bufferPoolManager.replacer.insert(page.pageId)
+	}
+	return value, err
 }
 
 func (c *MemCache) GetBlockId(key string) BlockId {

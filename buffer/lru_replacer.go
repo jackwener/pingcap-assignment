@@ -1,21 +1,30 @@
 package buffer
 
+import (
+	"log"
+	"sync"
+)
+
 type LRUReplacer struct {
-	//	mutex sync.RWMutex
+	locker *sync.Mutex
 
 	listHead *ListNode
 	listTail *ListNode
 
-	dict map[PageId]*ListNode
+	dict *sync.Map
+	// dict map[PageId]*ListNode
 }
 
 func CreateReplacer() *LRUReplacer {
 	replacer := &LRUReplacer{
-		// maxItemSize: maxItemSize,
 		listHead: &ListNode{pageId: -1},
 		listTail: &ListNode{pageId: -1},
-		dict:     make(map[PageId]*ListNode),
+		//dict:     make(map[PageId]*ListNode),
 	}
+	var m sync.Map
+	var lock sync.Mutex
+	replacer.dict = &m
+	replacer.locker = &lock
 
 	replacer.listTail.prev = replacer.listHead
 	replacer.listHead.next = replacer.listTail
@@ -23,20 +32,43 @@ func CreateReplacer() *LRUReplacer {
 	return replacer
 }
 
+func getListNode(m *sync.Map, pageId PageId) *ListNode {
+	if v, ok := m.Load(pageId); ok {
+		if node, ok := v.(*ListNode); ok {
+			return node
+		}
+
+		log.Println("type error")
+		return nil
+	}
+	return nil
+}
+
 // 插Head
 func (replacer *LRUReplacer) insert(pageId PageId) bool {
-	// TODO: 已经存在
+	// 已经存在
+	if node := getListNode(replacer.dict, pageId); node != nil {
+		replacer.locker.Lock()
+		node.remove()
+		node.insert(replacer.listHead)
+		replacer.locker.Unlock()
+		return true
+	}
+
 	node := &ListNode{pageId: pageId}
 
-	node.insert(replacer.listHead, replacer.listHead.next)
-
-	replacer.dict[pageId] = node
+	replacer.locker.Lock()
+	node.insert(replacer.listHead)
+	replacer.dict.Store(pageId, node)
+	replacer.locker.Unlock()
 
 	return true
 }
 
 // 取tail
 func (replacer *LRUReplacer) victim() PageId {
+	replacer.locker.Lock()
+
 	if replacer.listHead.next == replacer.listTail {
 		return -1
 	}
@@ -44,25 +76,16 @@ func (replacer *LRUReplacer) victim() PageId {
 	node := replacer.listTail.prev
 
 	node.remove()
+	replacer.locker.Unlock()
 
-	delete(replacer.dict, node.pageId)
+	replacer.dict.Delete(node.pageId)
 
 	return node.pageId
 }
 
 func (replacer *LRUReplacer) erase(pageId PageId) bool {
-	if node, ok := replacer.dict[pageId]; ok {
+	if node := getListNode(replacer.dict, pageId); node != nil {
 		node.remove()
-		return true
-	}
-
-	return false
-}
-
-func (replacer *LRUReplacer) use(pageId PageId) bool {
-	if node, ok := replacer.dict[pageId]; ok {
-		node.remove()
-		node.insert(replacer.listHead, replacer.listHead.next)
 		return true
 	}
 

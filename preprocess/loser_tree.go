@@ -122,7 +122,6 @@ func (lt *LoserTree) KMerge() []string {
 			blockFirstKey = append(blockFirstKey, lt.leaves[lt.node[0]].Key)
 		}
 
-		//继续读入后续的记录
 		lt.input(lt.node[0])
 		//根据新读入的记录的关键字的值，重新调整败者树，找出最终的胜者
 		lt.Adjust(lt.node[0])
@@ -182,25 +181,15 @@ func (lt *LoserTree) changeOutput() {
 }
 
 func (lt *LoserTree) outputBlock(kv KVEntry) {
-	var err error
 	lenBytes := make([]byte, 0, 4)
 
 	if lt.outCount >= BlockSize {
 		lt.changeOutput()
 	}
 
-	err = WriteLength(lt.writer, lenBytes, int32(len(kv.Key)))
-	util.Check(err)
+	WriteStr(lt.writer, lenBytes, kv.Key)
 
-	err = WriteString(lt.writer, kv.Key)
-	util.Check(err)
-
-	err = WriteLength(lt.writer, lenBytes, int32(len(kv.Value)))
-	util.Check(err)
-
-	err = WriteString(lt.writer, kv.Value)
-	util.Check(err)
+	WriteStr(lt.writer, lenBytes, kv.Value)
 
 	lt.outCount++
-
 }

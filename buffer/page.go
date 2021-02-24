@@ -14,7 +14,7 @@ import (
 type Page struct {
 	pageId  PageId
 	blockId BlockId
-	pin     int
+	pin     int32
 	store   SortedKVEntries
 	// RwLock   sync.RWMutex
 	// PageType int
@@ -53,7 +53,7 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 	right := kvs.length - 1
 	var mid int
 	for {
-		if left >= right {
+		if left > right {
 			break
 		}
 
@@ -61,7 +61,7 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 		if strings.Compare(key, kvs.keys[mid]) > 0 {
 			left = mid + 1
 		} else if strings.Compare(key, kvs.keys[mid]) < 0 {
-			right = mid
+			right = mid - 1
 		} else {
 			return mid, nil
 		}
