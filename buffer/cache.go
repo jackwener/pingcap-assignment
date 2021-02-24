@@ -34,10 +34,6 @@ func CreateMemCache(blockFirstKey []string) *MemCache {
 }
 
 func (c *MemCache) Get(key string) (string, error) {
-	if key == "1163" {
-		fmt.Println("debug")
-	}
-
 	blockId := c.GetBlockId(key)
 	if blockId == -1 {
 		return "", errors.New("not found block")

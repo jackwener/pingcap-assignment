@@ -19,7 +19,7 @@ type Filter struct {
 	keys  []byte
 }
 
-func New(size uint64, k uint64, race bool) *Filter {
+func CreateFilter(size uint64, k uint64, race bool) *Filter {
 	log2 := uint64(math.Ceil(math.Log2(float64(size))))
 	filter := &Filter{
 		m:          1 << log2,

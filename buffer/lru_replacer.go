@@ -15,7 +15,7 @@ type LRUReplacer struct {
 	// dict map[PageId]*ListNode
 }
 
-func CreateReplacer() *LRUReplacer {
+func CreateLRUReplacer() *LRUReplacer {
 	replacer := &LRUReplacer{
 		listHead: &ListNode{pageId: -1},
 		listTail: &ListNode{pageId: -1},
@@ -32,7 +32,7 @@ func CreateReplacer() *LRUReplacer {
 	return replacer
 }
 
-func getListNode(m *sync.Map, pageId PageId) *ListNode {
+func getListNode(m *sync.Map, pageId int32) *ListNode {
 	if v, ok := m.Load(pageId); ok {
 		if node, ok := v.(*ListNode); ok {
 			return node
@@ -47,7 +47,7 @@ func getListNode(m *sync.Map, pageId PageId) *ListNode {
 // 插Head
 func (replacer *LRUReplacer) insert(pageId PageId) bool {
 	// 已经存在
-	if node := getListNode(replacer.dict, pageId); node != nil {
+	if node := getListNode(replacer.dict, int32(pageId)); node != nil {
 		replacer.locker.Lock()
 		node.remove()
 		node.insert(replacer.listHead)
@@ -84,7 +84,7 @@ func (replacer *LRUReplacer) victim() PageId {
 }
 
 func (replacer *LRUReplacer) erase(pageId PageId) bool {
-	if node := getListNode(replacer.dict, pageId); node != nil {
+	if node := getListNode(replacer.dict, int32(pageId)); node != nil {
 		node.remove()
 		return true
 	}

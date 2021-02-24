@@ -15,15 +15,7 @@ type BufferPoolManager struct {
 	block2page *sync.Map
 	replacer   *LRUReplacer
 
-	freeList FreeList
-}
-
-type FreeList struct {
-	freeListHead *ListNode // dummy
-	freeListTail *ListNode // dummy
-	listLen      int32
-
-	locker *sync.Mutex
+	freeList DoubleList
 }
 
 func getPageId(m *sync.Map, blockId BlockId) PageId {
@@ -36,31 +28,6 @@ func getPageId(m *sync.Map, blockId BlockId) PageId {
 		return -1
 	}
 	return -1
-}
-
-// 头尾dummy node的双向链表
-type ListNode struct {
-	pageId     PageId
-	next, prev *ListNode
-	// locker     *sync.Mutex
-}
-
-// 双向链表移除节点
-func (node *ListNode) remove() {
-	node.prev.next = node.next
-	node.next.prev = node.prev
-
-	node.next = nil
-	node.prev = nil
-}
-
-// 双向链表添加节点
-func (node *ListNode) insert(prev *ListNode) {
-	node.next = prev.next
-	prev.next.prev = node
-
-	prev.next = node
-	node.prev = prev
 }
 
 func CreateBufferPoolManager() *BufferPoolManager {
@@ -79,17 +46,13 @@ func CreateBufferPoolManager() *BufferPoolManager {
 		manager.pages[i].initPage(PageId(i))
 	}
 
-	manager.replacer = CreateReplacer()
+	manager.replacer = CreateLRUReplacer()
 
-	manager.freeList.freeListHead = &ListNode{pageId: -1}
-	manager.freeList.freeListTail = &ListNode{pageId: -1}
-
-	manager.freeList.freeListHead.next = manager.freeList.freeListTail
-	manager.freeList.freeListTail.prev = manager.freeList.freeListHead
+	manager.freeList = *CreateDL()
 
 	for i := 0; i < manager.capacity; i++ {
 		node := &ListNode{pageId: PageId(i)}
-		node.insert(manager.freeList.freeListHead)
+		node.insert(manager.freeList.head)
 
 		manager.freeList.listLen += 1
 	}
@@ -111,10 +74,10 @@ func (manager *BufferPoolManager) fetchPage(id BlockId) *Page {
 	}
 
 	// 从free list里取buffer page
-	if manager.freeList.freeListHead.next != manager.freeList.freeListTail {
+	if !manager.freeList.isEmpty() {
 		// 从free list上取
 		manager.freeList.locker.Lock()
-		node := manager.freeList.freeListTail.prev
+		node := manager.freeList.tail.prev
 		node.remove()
 		manager.freeList.locker.Unlock()
 		atomic.AddInt32(&manager.freeList.listLen, -1)
