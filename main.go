@@ -23,7 +23,7 @@ func random(min, max int) int {
 }
 
 func testSingle(cache *buffer.MemCache) {
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 1000000; i++ {
 		key := strconv.Itoa(i)
 		_, err := cache.Get(key)
 		if err != nil {
@@ -35,7 +35,7 @@ func testSingle(cache *buffer.MemCache) {
 }
 
 func testMulti(cache *buffer.MemCache) {
-	threadNum := 100
+	threadNum := 50
 
 	var wg sync.WaitGroup
 	wg.Add(threadNum)

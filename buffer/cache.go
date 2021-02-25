@@ -47,7 +47,7 @@ func (c *MemCache) Get(key string) (string, error) {
 		return "", errors.New("get failed, key: " + key)
 	}
 
-	value, err := page.store.get(key)
+	value, err := page.get(key)
 	c.bufferPoolManager.drop(page.pageId)
 
 	return value, err

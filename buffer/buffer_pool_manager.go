@@ -106,8 +106,8 @@ func (manager *BufferPoolManager) fetchPage(id BlockId) *Page {
 
 		return page
 	}
-	manager.replacer.locker.Unlock()
 
+	manager.replacer.locker.Unlock()
 	return nil
 }
 
@@ -118,5 +118,4 @@ func (manager *BufferPoolManager) drop(id PageId) {
 		manager.replacer.insert(id)
 	}
 	manager.replacer.locker.Unlock()
-
 }

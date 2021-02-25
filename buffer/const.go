@@ -6,6 +6,6 @@ type (
 )
 
 const (
-	PageNum     = 200
+	PageNum     = 100
 	PageSlotNum = 100
 )

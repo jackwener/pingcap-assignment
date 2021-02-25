@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type Page struct {
@@ -15,8 +16,8 @@ type Page struct {
 	blockId BlockId
 	pin     int32
 	store   SortedKVEntries
-	// RwLock   sync.RWMutex
-	// PageType int
+
+	rwLock *sync.RWMutex
 }
 
 type SortedKVEntries struct {
@@ -26,6 +27,9 @@ type SortedKVEntries struct {
 }
 
 func (page *Page) initPage(id PageId) {
+	var rwLock sync.RWMutex
+
+	page.rwLock = &rwLock
 	page.pageId = id
 	page.blockId = -1
 	page.pin = 1
@@ -35,17 +39,18 @@ func (page *Page) initPage(id PageId) {
 	page.store.length = 0
 }
 
-// TODO:有必要吗
-func (page *Page) clear() {
+//func (page *Page) clear() {
+//
+//}
 
-}
-
-func (kvs *SortedKVEntries) get(key string) (string, error) {
-	index, err := kvs.binarySearch(key)
+func (page *Page) get(key string) (string, error) {
+	//page.rwLock.RLock()
+	//defer page.rwLock.RUnlock()
+	index, err := page.store.binarySearch(key)
 	if err != nil {
 		return "", err
 	}
-	return kvs.values[index], nil
+	return page.store.values[index], nil
 }
 
 func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
@@ -70,12 +75,15 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 }
 
 func (page *Page) loadPage(id BlockId) {
+	//page.rwLock.Lock()
+	//defer page.rwLock.Unlock()
+
 	page.pin = 1
 	page.blockId = id
 
 	file, err := os.Open("./block/block" + "-" + strconv.Itoa(int(id)) + ".txt")
 	if err != nil {
-		log.Println("open block error")
+		log.Fatalln("open block error")
 	}
 	defer file.Close()
 
@@ -87,7 +95,7 @@ func (page *Page) loadPage(id BlockId) {
 		key, err := preprocess.ReadStr(r, lenBytes, dataBytes)
 		if err != nil {
 			if err == io.EOF {
-
+				log.Fatalln("page size not eq block size, error")
 			}
 		}
 		value, err := preprocess.ReadStr(r, lenBytes, dataBytes)
