@@ -3,9 +3,8 @@ package buffer
 import "sync"
 
 type DoubleList struct {
-	head    *ListNode // dummy
-	tail    *ListNode // dummy
-	listLen int32
+	head *ListNode // dummy
+	tail *ListNode // dummy
 
 	locker *sync.Mutex
 }
@@ -26,10 +25,9 @@ func CreateDL() *DoubleList {
 	head, tail := &ListNode{pageId: -1}, &ListNode{pageId: -1}
 	head.next, tail.prev = tail, head
 	return &DoubleList{
-		head:    head,
-		tail:    tail,
-		listLen: 0,
-		locker:  &locker,
+		head:   head,
+		tail:   tail,
+		locker: &locker,
 	}
 }
 

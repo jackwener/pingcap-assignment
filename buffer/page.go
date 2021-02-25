@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 )
 
 type Page struct {
@@ -29,6 +28,7 @@ type SortedKVEntries struct {
 func (page *Page) initPage(id PageId) {
 	page.pageId = id
 	page.blockId = -1
+	page.pin = 1
 
 	page.store.keys = make([]string, PageSlotNum)
 	page.store.values = make([]string, PageSlotNum)
@@ -49,21 +49,19 @@ func (kvs *SortedKVEntries) get(key string) (string, error) {
 }
 
 func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
-	left := 0
-	right := kvs.length - 1
-	var mid int
-	for {
-		if left > right {
-			break
+	head := 0
+	tail := kvs.length - 1
+
+	for head <= tail {
+		mid := (head + tail) / 2
+		if kvs.keys[mid] == key {
+			return mid, nil
 		}
 
-		mid = left + (right-left)/2
-		if strings.Compare(key, kvs.keys[mid]) > 0 {
-			left = mid + 1
-		} else if strings.Compare(key, kvs.keys[mid]) < 0 {
-			right = mid - 1
+		if kvs.keys[mid] < key {
+			head = mid + 1
 		} else {
-			return mid, nil
+			tail = mid - 1
 		}
 	}
 
@@ -72,9 +70,10 @@ func (kvs *SortedKVEntries) binarySearch(key string) (int, error) {
 }
 
 func (page *Page) loadPage(id BlockId) {
+	page.pin = 1
 	page.blockId = id
 
-	file, err := os.Open("block" + "-" + strconv.Itoa(int(id)) + ".txt")
+	file, err := os.Open("./block/block" + "-" + strconv.Itoa(int(id)) + ".txt")
 	if err != nil {
 		log.Println("open block error")
 	}

@@ -32,7 +32,7 @@ func CreateLoserTree(k int) LoserTree {
 	var err error
 	lt.files = make([]*os.File, lt.k)
 	for i := 0; i < lt.k; i++ {
-		lt.files[i], err = os.Open("intern" + "-" + strconv.Itoa(i) + ".txt")
+		lt.files[i], err = os.Open("./intern/intern" + "-" + strconv.Itoa(i) + ".txt")
 		util.Check(err)
 	}
 
@@ -43,7 +43,7 @@ func CreateLoserTree(k int) LoserTree {
 
 	lt.outCount = 0
 	lt.outId = 0
-	lt.outFile, err = os.Create("block" + "-" + strconv.Itoa(lt.outId) + ".txt")
+	lt.outFile, err = os.Create("./block/block" + "-" + strconv.Itoa(lt.outId) + ".txt")
 	if err != nil {
 
 	}
@@ -100,7 +100,6 @@ func (lt *LoserTree) KMerge() []string {
 
 	lt.InitLoserTree()
 
-	// TODO：size
 	blockFirstKey := make([]string, 0, 1024)
 	count := 0
 	// 读取第一个
@@ -171,7 +170,7 @@ func (lt *LoserTree) changeOutput() {
 	lt.outId++
 	lt.outCount = 0
 
-	file, err := os.Create("block" + "-" + strconv.Itoa(lt.outId) + ".txt")
+	file, err := os.Create("./block/block" + "-" + strconv.Itoa(lt.outId) + ".txt")
 	if err != nil {
 
 	}

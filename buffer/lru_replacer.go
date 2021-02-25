@@ -6,30 +6,73 @@ import (
 )
 
 type LRUReplacer struct {
-	locker *sync.Mutex
-
-	listHead *ListNode
-	listTail *ListNode
-
-	dict *sync.Map
+	list DoubleList
 	// dict map[PageId]*ListNode
+	dict *sync.Map
+
+	locker *sync.Mutex
 }
 
 func CreateLRUReplacer() *LRUReplacer {
 	replacer := &LRUReplacer{
-		listHead: &ListNode{pageId: -1},
-		listTail: &ListNode{pageId: -1},
-		//dict:     make(map[PageId]*ListNode),
+		list: *CreateDL(),
 	}
 	var m sync.Map
-	var lock sync.Mutex
-	replacer.dict = &m
-	replacer.locker = &lock
+	var locker sync.Mutex
 
-	replacer.listTail.prev = replacer.listHead
-	replacer.listHead.next = replacer.listTail
+	replacer.locker = &locker
+	replacer.dict = &m
+
+	replacer.list.tail.prev = replacer.list.head
+	replacer.list.head.next = replacer.list.tail
 
 	return replacer
+}
+
+// 插Head
+func (replacer *LRUReplacer) insert(pageId PageId) bool {
+	// 场景中不可能find
+	//if node := getListNode(replacer.dict, int32(pageId)); node != nil {
+	//	replacer.list.locker.Lock()
+	//	node.remove()
+	//	node.insert(replacer.list.head)
+	//	replacer.list.locker.Unlock()
+	//	return true
+	//}
+
+	node := &ListNode{pageId: pageId}
+
+	node.insert(replacer.list.head)
+
+	replacer.dict.Store(pageId, node)
+
+	return true
+}
+
+// 取tail
+func (replacer *LRUReplacer) victim() PageId {
+
+	if replacer.list.isEmpty() {
+		return -1
+	}
+
+	node := replacer.list.tail.prev
+	node.remove()
+
+	replacer.dict.Delete(node.pageId)
+
+	return node.pageId
+}
+
+func (replacer *LRUReplacer) erase(pageId PageId) bool {
+	if node := getListNode(replacer.dict, int32(pageId)); node != nil {
+
+		node.remove()
+
+		return true
+	}
+
+	return false
 }
 
 func getListNode(m *sync.Map, pageId int32) *ListNode {
@@ -42,52 +85,4 @@ func getListNode(m *sync.Map, pageId int32) *ListNode {
 		return nil
 	}
 	return nil
-}
-
-// 插Head
-func (replacer *LRUReplacer) insert(pageId PageId) bool {
-	// 已经存在
-	if node := getListNode(replacer.dict, int32(pageId)); node != nil {
-		replacer.locker.Lock()
-		node.remove()
-		node.insert(replacer.listHead)
-		replacer.locker.Unlock()
-		return true
-	}
-
-	node := &ListNode{pageId: pageId}
-
-	replacer.locker.Lock()
-	node.insert(replacer.listHead)
-	replacer.dict.Store(pageId, node)
-	replacer.locker.Unlock()
-
-	return true
-}
-
-// 取tail
-func (replacer *LRUReplacer) victim() PageId {
-	replacer.locker.Lock()
-
-	if replacer.listHead.next == replacer.listTail {
-		return -1
-	}
-
-	node := replacer.listTail.prev
-
-	node.remove()
-	replacer.locker.Unlock()
-
-	replacer.dict.Delete(node.pageId)
-
-	return node.pageId
-}
-
-func (replacer *LRUReplacer) erase(pageId PageId) bool {
-	if node := getListNode(replacer.dict, int32(pageId)); node != nil {
-		node.remove()
-		return true
-	}
-
-	return false
 }

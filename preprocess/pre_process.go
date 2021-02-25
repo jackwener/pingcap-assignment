@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"kv/util"
+	"log"
 	"os"
 	"sort"
 )
@@ -20,11 +21,37 @@ func (e KVEntries) Less(i, j int) bool { return e[i].Key < e[j].Key }
 func (e KVEntries) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
 
 func SortAll() []string {
+	checkDir()
 	lt := CreateLoserTree(Sort())
 	blockFirstKey := lt.KMerge()
 	lt.CloseLoserTree()
 
 	return blockFirstKey
+}
+
+func checkDir() {
+	blockPath := "./block/"
+	internPath := "./intern/"
+
+	paths := []string{blockPath, internPath}
+
+	for _, path := range paths {
+		// check
+		if _, err := os.Stat(path); err != nil {
+			err := os.Mkdir(path, 0711)
+
+			if err != nil {
+				log.Fatal("Error creating directory")
+				return
+			}
+		}
+
+		// check again
+		if _, err := os.Stat(path); err != nil {
+			log.Fatal("Error not found directory")
+			return
+		}
+	}
 }
 
 func Sort() int {
@@ -63,14 +90,8 @@ func Sort() int {
 			kvs[i].Key = key
 
 			// read value
+			value, err := ReadStr(r, lenBytes, dataBytes)
 
-			// TODO
-			//value, err := ReadStr(r, lenBytes, dataBytes)
-
-			length, err = ReadInt32(r, lenBytes)
-			util.Check(err)
-
-			value, err := ReadString(r, dataBytes[:length], length)
 			kvs[i].Value = value
 		}
 

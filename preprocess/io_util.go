@@ -9,7 +9,7 @@ import (
 )
 
 func OutputInternFile(kvs KVEntries, id int) {
-	file, err := os.Create("intern" + "-" + strconv.Itoa(id) + ".txt")
+	file, err := os.Create("./intern/intern" + "-" + strconv.Itoa(id) + ".txt")
 	if err != nil {
 		panic("open file failed")
 	}
